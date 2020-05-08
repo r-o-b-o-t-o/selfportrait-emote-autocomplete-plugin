@@ -1,0 +1,19 @@
+{
+    "info": {
+        "name": "SelfportraitEmoteAutocomplete",
+        "authors": [{
+            "name": "Roboto",
+            "discord_id": "175631911450836993",
+            "github_username": "r-o-b-o-t-o"
+        }],
+        "version": "2.0.0",
+        "description": "Adds an auto-complete menu for Selfportrait emotes.",
+        "github": "http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin",
+        "github_raw": "http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin/raw/master/dist/SelfportraitEmoteAutocomplete.plugin.js"
+    },
+    "changelog": [
+        {"title": "New Stuff", "items": ["Added auto-update URL", "Added changelog"]},
+        {"title": "Improvements", "type": "improved", "items": ["Upgraded to BDv2-style plugin", "Fixed autocomplete panel not appearing anymore due to the textbox preview feature"]}
+    ],
+    "main": "index.js"
+}

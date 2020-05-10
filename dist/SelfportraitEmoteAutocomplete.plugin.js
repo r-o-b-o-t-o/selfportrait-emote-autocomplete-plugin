@@ -32,7 +32,7 @@
 @else@*/
 
 var SelfportraitEmoteAutocomplete = (() => {
-    const config = {"info":{"name":"SelfportraitEmoteAutocomplete","authors":[{"name":"Roboto","discord_id":"175631911450836993","github_username":"r-o-b-o-t-o"}],"version":"2.0.0","description":"Adds an auto-complete menu for Selfportrait emotes.","github":"http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin","github_raw":"http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin/raw/master/dist/SelfportraitEmoteAutocomplete.plugin.js"},"changelog":[{"title":"New Stuff","items":["Added auto-update URL","Added changelog"]},{"title":"Improvements","type":"improved","items":["Upgraded to BDv2-style plugin","Fixed autocomplete panel not appearing anymore due to the textbox preview feature"]}],"main":"index.js"};
+    const config = {"info":{"name":"SelfportraitEmoteAutocomplete","authors":[{"name":"Roboto","discord_id":"175631911450836993","github_username":"r-o-b-o-t-o"}],"version":"2.1.0","description":"Adds an auto-complete menu for Selfportrait emotes.","github":"http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin","github_raw":"http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin/raw/master/dist/SelfportraitEmoteAutocomplete.plugin.js"},"changelog":[{"title":"New Stuff","items":["Added autocomplete for Twitch emotes"]}],"main":"index.js"};
 
     return !global.ZeresPluginLibrary ? class {
         constructor() {this._config = config;}
@@ -92,6 +92,7 @@ var SelfportraitEmoteAutocomplete = (() => {
             this.emotes = [];
             this.getEmotes();
             this.selectedIdx = -1;
+            this.currentPrefix = "";
 
             this.observer = new MutationObserver((mutations, _observer) => {
                 for (var mut of mutations) {
@@ -228,67 +229,48 @@ var SelfportraitEmoteAutocomplete = (() => {
                 var words = text.split(" ");
                 var lastWord = words[words.length - 1];
 
-                if (!lastWord || lastWord.length <= this.settings.prefix.length || (this.settings.prefix && !lastWord.startsWith(this.settings.prefix))) {
+                var hasRegularEmote = lastWord && lastWord.startsWith(this.settings.prefix) && lastWord.length > this.settings.prefix.length;
+                var hasTwitchEmote = lastWord && lastWord.startsWith(this.settings.twitchPrefix) && lastWord.length > this.settings.twitchPrefix.length;
+                if (!hasRegularEmote && !hasTwitchEmote) {
                     this.removeAutocompletePanel();
                     return;
                 }
 
-                if (this.settings.prefix) {
+                if (hasRegularEmote) {
                     lastWord = lastWord.substring(this.settings.prefix.length, lastWord.length);
-                }
+                    this.currentPrefix = this.settings.prefix;
+                    this.results = [];
 
-                this.results = [];
-
-                var addedCount = 0;
-                for (var emote of this.emotes) {
-                    if (addedCount >= this.settings.maxResults) {
-                        break;
-                    }
-                    if (!emote.name.toLowerCase().includes(lastWord.toLowerCase())) {
-                        continue;
-                    }
-
-                    this.results.push(emote);
-                    ++addedCount;
-                }
-
-                if (this.results.length == 0) {
-                    this.removeAutocompletePanel();
-                    return;
-                }
-
-                if (this.$autocomplete == null) {
-                    this.$autocomplete = this.$autocompleteTemplate.clone();
-                    this.$autocomplete.prependTo(this.$chatbox.parent().parent().parent());
-                }
-
-                var $list = this.$autocomplete.find(".spea-autocomplete-list");
-                $list.empty();
-                $(this.results).each((idx, emote) => {
-                    var img = emote.type == "Sound" ? "/assets/658d047ef378c3147a9d8d3a01fef268.svg" : emote.url;
-                    var $item = $(`<div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa">
-                                        <div class="selector-2IcQBU selectable-3dP3y- spea-autocomplete-item">
-                                            <div class="flex-1xMQg5 flex-1O1GKY horizontal-1ae9ci horizontal-2EEEnY flex-1O1GKY directionRow-3v3tfG justifyStart-2NDFzi alignCenter-1dQNNs noWrap-3jynv6 content-Qb0rXO" style="flex: 1 1 auto;">
-                                                <img style="width: ${this.settings.previewSize}px; height: ${this.settings.previewSize}px;" src="${img}" />
-                                                <div class="marginLeft8-1YseBe">${emote.name}</div>
-                                                <div style="margin-left: auto; opacity: 0.5;">${emote.type}</div>
-                                            </div>
-                                        </div>
-                                    </div>`);
-                    $item.appendTo($list);
-                    $item.on("mouseover", e => {
-                        if (this.selectedIdx != idx) {
-                            this.selectedIdx = idx;
-                            this.updateSelected();
+                    var addedCount = 0;
+                    for (var emote of this.emotes) {
+                        if (addedCount >= this.settings.maxResults) {
+                            break;
                         }
-                    });
-                    $item.on("click", e => {
-                        this.onSelectionValidated();
-                    });
-                });
+                        if (!emote.name.toLowerCase().includes(lastWord.toLowerCase())) {
+                            continue;
+                        }
 
-                this.selectedIdx = Math.min(this.results.length - 1, Math.max(this.selectedIdx, 0));
-                this.updateSelected();
+                        this.results.push(emote);
+                        ++addedCount;
+                    }
+
+                    this.applyResults();
+                } else if (hasTwitchEmote) {
+                    lastWord = lastWord.substring(this.settings.twitchPrefix.length, lastWord.length);
+                    this.currentPrefix = this.settings.twitchPrefix;
+
+                    $.getJSON(this.settings.url + `/library/twitch?query=${lastWord}&limit=${this.settings.maxResults}`, data => {
+                        this.results = [];
+                        for (var emote of data) {
+                            this.results.push({
+                                "name": emote["name"],
+                                "url": emote["url"],
+                                "type": "Twitch Emote",
+                            });
+                        }
+                        this.applyResults();
+                    });
+                }
             });
         }
 
@@ -298,6 +280,46 @@ var SelfportraitEmoteAutocomplete = (() => {
                 this.$autocomplete = null;
                 this.selectedIdx = -1;
             }
+        }
+
+        applyResults() {
+            if (this.results.length == 0) {
+                this.removeAutocompletePanel();
+                return;
+            }
+
+            if (this.$autocomplete == null) {
+                this.$autocomplete = this.$autocompleteTemplate.clone();
+                this.$autocomplete.prependTo(this.$chatbox.parent().parent().parent());
+            }
+
+            var $list = this.$autocomplete.find(".spea-autocomplete-list");
+            $list.empty();
+            $(this.results).each((idx, emote) => {
+                var img = emote.type == "Sound" ? "/assets/658d047ef378c3147a9d8d3a01fef268.svg" : emote.url;
+                var $item = $(`<div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa">
+                                        <div class="selector-2IcQBU selectable-3dP3y- spea-autocomplete-item">
+                                            <div class="flex-1xMQg5 flex-1O1GKY horizontal-1ae9ci horizontal-2EEEnY flex-1O1GKY directionRow-3v3tfG justifyStart-2NDFzi alignCenter-1dQNNs noWrap-3jynv6 content-Qb0rXO" style="flex: 1 1 auto;">
+                                                <img style="width: ${this.settings.previewSize}px; height: ${this.settings.previewSize}px;" src="${img}" />
+                                                <div class="marginLeft8-1YseBe">${emote.name}</div>
+                                                <div style="margin-left: auto; opacity: 0.5;">${emote.type}</div>
+                                            </div>
+                                        </div>
+                                    </div>`);
+                $item.appendTo($list);
+                $item.on("mouseover", e => {
+                    if (this.selectedIdx != idx) {
+                        this.selectedIdx = idx;
+                        this.updateSelected();
+                    }
+                });
+                $item.on("click", e => {
+                    this.onSelectionValidated();
+                });
+            });
+
+            this.selectedIdx = Math.min(this.results.length - 1, Math.max(this.selectedIdx, 0));
+            this.updateSelected();
         }
 
         updateSelected() {
@@ -330,8 +352,7 @@ var SelfportraitEmoteAutocomplete = (() => {
             var words = text.split(" ");
             var lastWord = words[words.length - 1];
             var emote = this.results[this.selectedIdx];
-            var prefix = this.settings.prefix;
-            for (var i = 0; i < lastWord.length - prefix.length; ++i) {
+            for (var i = 0; i < lastWord.length - this.currentPrefix.length; ++i) {
                 document.execCommand("delete", false);
             }
             document.execCommand("insertText", false, emote.name + " ");

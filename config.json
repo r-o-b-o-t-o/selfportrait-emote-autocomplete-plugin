@@ -8,16 +8,17 @@
                 "github_username": "r-o-b-o-t-o"
             }
         ],
-        "version": "2.1.0",
+        "version": "2.2.0",
         "description": "Adds an auto-complete menu for Selfportrait emotes.",
-        "github": "http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin",
-        "github_raw": "http://roboto.space/gogs/roboto/selfportrait-emote-autocomplete-plugin/raw/master/dist/SelfportraitEmoteAutocomplete.plugin.js"
+        "github": "https://github.com/r-o-b-o-t-o/selfportrait-emote-autocomplete-plugin",
+        "github_raw": "https://raw.githubusercontent.com/r-o-b-o-t-o/selfportrait-emote-autocomplete-plugin/master/dist/SelfportraitEmoteAutocomplete.plugin.js"
     },
     "changelog": [
         {
-            "title": "New Stuff",
+            "title": "Bugs Squashed",
+            "type": "fixed",
             "items": [
-                "Added autocomplete for Twitch emotes"
+                "Fixed broken CSS classes"
             ]
         }
     ],

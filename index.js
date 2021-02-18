@@ -18,11 +18,11 @@ module.exports = (Plugin, Library) => {
             Logger.log("Started");
 
             this.$autocompleteTemplate = $(
-                `<div id="spea-autocomplete" class="autocomplete-1vrmpx autocomplete-i9yVHs">
-                    <div class="autocompleteInner-zh20B_">
-                        <div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa">
-                            <div class="selector-2IcQBU">
-                                <div class="contentTitle-2tG_sM small-29zrCQ size12-3R0845 height16-2Lv3qA weightSemiBold-NJexzi">Emotes matching <strong class="spea-query"></strong></div>
+                `<div id="spea-autocomplete" class="autocomplete-1vrmpx autocomplete-3l_oCd da-autocomplete">
+                    <div class="autocompleteInner-zh20B_ da-autocompleteInner">
+                        <div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa da-autocompleteRowVertical da-autocompleteRow">
+                            <div class="base-1pYU8j da-base">
+                                <div class="contentTitle-2tG_sM da-contentTitle base-1x0h_U da-base size12-3cLvbJ">Emotes matching <strong class="spea-query"></strong></div>
                             </div>
                         </div>
                         <div class="spea-autocomplete-list"></div>
@@ -197,7 +197,7 @@ module.exports = (Plugin, Library) => {
                         ++addedCount;
                     }
 
-                    this.applyResults();
+                    this.applyResults(lastWord);
                 } else if (hasTwitchEmote) {
                     lastWord = lastWord.substring(this.settings.twitchPrefix.length, lastWord.length);
                     this.currentPrefix = this.settings.twitchPrefix;
@@ -211,7 +211,7 @@ module.exports = (Plugin, Library) => {
                                 "type": "Twitch Emote",
                             });
                         }
-                        this.applyResults();
+                        this.applyResults(lastWord);
                     });
                 }
             });
@@ -225,7 +225,7 @@ module.exports = (Plugin, Library) => {
             }
         }
 
-        applyResults() {
+        applyResults(lastWord) {
             if (this.results.length == 0) {
                 this.removeAutocompletePanel();
                 return;
@@ -236,19 +236,23 @@ module.exports = (Plugin, Library) => {
                 this.$autocomplete.prependTo(this.$chatbox.parent().parent().parent());
             }
 
+            this.$autocomplete.find(".spea-query").text(lastWord);
+
             var $list = this.$autocomplete.find(".spea-autocomplete-list");
             $list.empty();
             $(this.results).each((idx, emote) => {
                 var img = emote.type == "Sound" ? "/assets/658d047ef378c3147a9d8d3a01fef268.svg" : emote.url;
-                var $item = $(`<div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa">
-                                        <div class="selector-2IcQBU selectable-3dP3y- spea-autocomplete-item">
-                                            <div class="flex-1xMQg5 flex-1O1GKY horizontal-1ae9ci horizontal-2EEEnY flex-1O1GKY directionRow-3v3tfG justifyStart-2NDFzi alignCenter-1dQNNs noWrap-3jynv6 content-Qb0rXO" style="flex: 1 1 auto;">
+                var $item = $(`<div class="autocompleteRowVertical-q1K4ky autocompleteRow-2OthDa da-autocompleteRowVertical da-autocompleteRow autocompleteRowVerticalSmall-1bvn6e da-autocompleteRowVerticalSmall">
+                                    <div class="base-1pYU8j da-base selectable-3dP3y- da-selectable spea-autocomplete-item">
+                                        <div class="autocompleteRowContent-1AMstF da-autocompleteRowContent" style="flex: 1 1 auto;">
+                                            <div class="autocompleteRowIcon-2VJmzt da-autocompleteRowIcon">
                                                 <img style="width: ${this.settings.previewSize}px; height: ${this.settings.previewSize}px;" src="${img}" />
-                                                <div class="marginLeft8-1YseBe">${emote.name}</div>
-                                                <div style="margin-left: auto; opacity: 0.5;">${emote.type}</div>
                                             </div>
+                                            <div class="autocompleteRowContentPrimary-238PvP da-autocompleteRowContentPrimary">${emote.name}</div>
+                                            <div style="margin-left: auto; opacity: 0.5;">${emote.type}</div>
                                         </div>
-                                    </div>`);
+                                    </div>
+                                </div>`);
                 $item.appendTo($list);
                 $item.on("mouseover", e => {
                     if (this.selectedIdx != idx) {
@@ -272,9 +276,9 @@ module.exports = (Plugin, Library) => {
             var _this = this;
             this.$autocomplete.find(".spea-autocomplete-item").each((idx, item) => {
                 if (idx == _this.selectedIdx) {
-                    $(item).addClass("selectorSelected-1_M1WV");
+                    $(item).addClass("selected-1Tbx07");
                 } else {
-                    $(item).removeClass("selectorSelected-1_M1WV");
+                    $(item).removeClass("selected-1Tbx07");
                 }
             });
             return true;
